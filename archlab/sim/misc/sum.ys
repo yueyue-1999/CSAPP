@@ -1,0 +1,38 @@
+.pos 0 #设置当前位置为0
+irmovq stack, %rsp #设置栈指针
+call main
+halt
+
+# Sample linked list
+    .align 8
+ele1:
+    .quad 0x00a
+    .quad ele2
+ele2:
+    .quad 0x0b0
+    .quad ele3
+ele3:
+    .quad 0xc00
+    .quad 0
+
+main:
+    irmovq ele1, %rdi #将链表的第一个元素的地址放入%rdi
+    call sum_list
+    ret
+
+sum_list:
+    xorq %rax, %rax #设置val=0
+    jmp test
+loop:
+    mrmovq (%rdi), %r8 #从内存中取val的值放入寄存器, r8是caller-saved.
+    addq %r8, %rax #从val=val+新读出的值
+    mrmovq 8(%rdi), %rdi #rdi为elei的地址
+test:
+    andq %rdi, %rdi #检查%rdi是否为0
+    jne loop
+    ret
+
+    .pos 0x200
+stack:
+
+

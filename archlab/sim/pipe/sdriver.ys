@@ -1,0 +1,133 @@
+#######################################################################
+# Test for copying block of size 4;
+#######################################################################
+	.pos 0
+main:	irmovq Stack, %rsp  	# Set up stack pointer
+
+	# Set up arguments for copy function and then invoke it
+	irmovq $4, %rdx		# src and dst have 4 elements
+	irmovq dest, %rsi	# dst array
+	irmovq src, %rdi	# src array
+	call ncopy		 
+	halt			# should halt with num nonzeros in %rax
+StartFun:
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len words to dst.
+# Return the number of positive words (>0) contained in src.
+#
+# Include your name and ID here.
+#
+# Describe how and why you modified the baseline code.
+#
+##################################################################
+# Do not modify this portion
+# Function prologue.
+# %rdi = src, %rsi = dst, %rdx = len
+ncopy:
+
+##################################################################
+# You can modify this portion
+	# Loop header
+	iaddq $-3, %rdx		# len <= n-1? 
+	jle Need_add		# if so, goto Done:
+
+Loop4x4:
+	mrmovq (%rdi), %r8	# read val from src...
+	mrmovq 8(%rdi), %r9
+	andq %r8, %r8		# val <= 0?
+	jle Loopa		# if so, goto Npos:
+	iaddq $1, %rax		# count++ #如果是正数count+1 	    
+Loopa:
+	rmmovq %r8, (%rsi)	# ...and store it to dst
+	rmmovq %r9, 8(%rsi)	# ...and store it to dst
+	andq %r9, %r9		# val <= 0?
+	jle Loopb		# if so, goto Npos:
+	iaddq $1, %rax		# count++ #如果是正数count+1 
+Loopb:	
+	mrmovq 16(%rdi), %r8	# read val from src...
+	mrmovq 24(%rdi), %r9
+	andq %r8, %r8		# val <= 0?
+	jle Loopc		# if so, goto Npos:
+	iaddq $1, %rax		# count++ #如果是正数count+1 
+Loopc:
+	rmmovq %r8, 16(%rsi)	# ...and store it to dst
+	rmmovq %r9, 24(%rsi)	# ...and store it to dst
+	andq %r9, %r9		# val <= 0?
+	jle Loopd		# if so, goto Npos:
+	iaddq $1, %rax		# count++ #如果是正数count+1
+Loopd:
+	iaddq $32, %rdi		# src++
+	iaddq $32, %rsi		# dst++
+	iaddq $-4, %rdx		# len-- #rdx代表还需要复制的src字符串的长度
+	jg Loop4x4			# 
+
+Need_add:
+	iaddq $3, %rdx #将初始减去了的值加回来
+	jle Done
+
+Loop1:
+	mrmovq (%rdi), %r8	# read val from src...
+	rmmovq %r8, (%rsi)	# ...and store it to dst
+	andq %r8, %r8		# val <= 0?
+	jle Loop1_2		# if so, goto Npos:
+	iaddq $1, %rax		# count++ #如果是正数count+1 
+Loop1_2:
+	iaddq $8, %rdi		# src++
+	iaddq $8, %rsi		# dst++
+	iaddq $-1, %rdx		# len-- #rdx代表还需要复制的src字符串的长度
+	jg Loop1
+
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	ret
+##################################################################
+# Keep the following label at the end of your function
+End:
+#/* $end ncopy-ys */
+EndFun:
+
+###############################
+# Source and destination blocks 
+###############################
+	.align 8
+src:
+	.quad -1
+	.quad 2
+	.quad 3
+	.quad -4
+	.quad 0xbcdefa # This shouldn't get moved
+
+	.align 16
+Predest:
+	.quad 0xbcdefa
+dest:
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+Postdest:
+	.quad 0xdefabc
+
+.align 8
+# Run time stack
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+
+Stack:

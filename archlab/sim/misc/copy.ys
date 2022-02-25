@@ -1,0 +1,43 @@
+.pos 0 #设置当前位置为0
+irmovq stack, %rsp #设置栈指针
+call main
+halt
+
+    .align 8
+# Source block
+src:
+    .quad 0x00a
+    .quad 0x0b0
+    .quad 0xc00
+# Destination block
+dest:
+    .quad 0x111
+    .quad 0x222
+    .quad 0x333
+
+main:
+    irmovq src, %rdi #将链表的第一个元素的地址放入%rdi
+    irmovq dest, %rsi 
+    irmovq $3, %rdx
+    call copy_block
+    ret
+
+copy_block:
+    xorq %rax, %rax #设置val=0
+    irmovq $8, %r8
+    irmovq $1, %r9
+    jmp test
+loop:
+    mrmovq (%rdi), %r10 #Get val = *start
+    addq %r8, %rdi #src++ 
+    rmmovq %r10, (%rsi) #*dest = val
+    addq %r8, %rsi #dest++  
+    xorq %r10, %rax #result ^= val
+    subq %r9, %rdx #len--
+test:
+    andq %rdx, %rdx #检查%rdx是否为0
+    jne loop
+    ret
+
+.pos 0x200
+stack:

@@ -1,0 +1,133 @@
+                            | #######################################################################
+                            | # Test for copying block of size 4;
+                            | #######################################################################
+0x000:                      | 	.pos 0
+0x000: 30f45002000000000000 | main:	irmovq Stack, %rsp  	# Set up stack pointer
+                            | 
+                            | 	# Set up arguments for copy function and then invoke it
+0x00a: 30f20400000000000000 | 	irmovq $4, %rdx		# src and dst have 4 elements
+0x014: 30f6a801000000000000 | 	irmovq dest, %rsi	# dst array
+0x01e: 30f77801000000000000 | 	irmovq src, %rdi	# src array
+0x028: 803200000000000000   | 	call ncopy		 
+0x031: 00                   | 	halt			# should halt with num nonzeros in %rax
+0x032:                      | StartFun:
+                            | #/* $begin ncopy-ys */
+                            | ##################################################################
+                            | # ncopy.ys - Copy a src block of len words to dst.
+                            | # Return the number of positive words (>0) contained in src.
+                            | #
+                            | # Include your name and ID here.
+                            | #
+                            | # Describe how and why you modified the baseline code.
+                            | #
+                            | ##################################################################
+                            | # Do not modify this portion
+                            | # Function prologue.
+                            | # %rdi = src, %rsi = dst, %rdx = len
+0x032:                      | ncopy:
+                            | 
+                            | ##################################################################
+                            | # You can modify this portion
+                            | 	# Loop header
+0x032: c0f2fdffffffffffffff | 	iaddq $-3, %rdx		# len <= n-1? 
+0x03c: 711001000000000000   | 	jle Need_add		# if so, goto Done:
+                            | 
+0x045:                      | Loop4x4:
+0x045: 50870000000000000000 | 	mrmovq (%rdi), %r8	# read val from src...
+0x04f: 50970800000000000000 | 	mrmovq 8(%rdi), %r9
+0x059: 6288                 | 	andq %r8, %r8		# val <= 0?
+0x05b: 716e00000000000000   | 	jle Loopa		# if so, goto Npos:
+0x064: c0f00100000000000000 | 	iaddq $1, %rax		# count++ #如果是正数count+1 	    
+0x06e:                      | Loopa:
+0x06e: 40860000000000000000 | 	rmmovq %r8, (%rsi)	# ...and store it to dst
+0x078: 40960800000000000000 | 	rmmovq %r9, 8(%rsi)	# ...and store it to dst
+0x082: 6299                 | 	andq %r9, %r9		# val <= 0?
+0x084: 719700000000000000   | 	jle Loopb		# if so, goto Npos:
+0x08d: c0f00100000000000000 | 	iaddq $1, %rax		# count++ #如果是正数count+1 
+0x097:                      | Loopb:	
+0x097: 50871000000000000000 | 	mrmovq 16(%rdi), %r8	# read val from src...
+0x0a1: 50971800000000000000 | 	mrmovq 24(%rdi), %r9
+0x0ab: 6288                 | 	andq %r8, %r8		# val <= 0?
+0x0ad: 71c000000000000000   | 	jle Loopc		# if so, goto Npos:
+0x0b6: c0f00100000000000000 | 	iaddq $1, %rax		# count++ #如果是正数count+1 
+0x0c0:                      | Loopc:
+0x0c0: 40861000000000000000 | 	rmmovq %r8, 16(%rsi)	# ...and store it to dst
+0x0ca: 40961800000000000000 | 	rmmovq %r9, 24(%rsi)	# ...and store it to dst
+0x0d4: 6299                 | 	andq %r9, %r9		# val <= 0?
+0x0d6: 71e900000000000000   | 	jle Loopd		# if so, goto Npos:
+0x0df: c0f00100000000000000 | 	iaddq $1, %rax		# count++ #如果是正数count+1
+0x0e9:                      | Loopd:
+0x0e9: c0f72000000000000000 | 	iaddq $32, %rdi		# src++
+0x0f3: c0f62000000000000000 | 	iaddq $32, %rsi		# dst++
+0x0fd: c0f2fcffffffffffffff | 	iaddq $-4, %rdx		# len-- #rdx代表还需要复制的src字符串的长度
+0x107: 764500000000000000   | 	jg Loop4x4			# 
+                            | 
+0x110:                      | Need_add:
+0x110: c0f20300000000000000 | 	iaddq $3, %rdx #将初始减去了的值加回来
+0x11a: 717301000000000000   | 	jle Done
+                            | 
+0x123:                      | Loop1:
+0x123: 50870000000000000000 | 	mrmovq (%rdi), %r8	# read val from src...
+0x12d: 40860000000000000000 | 	rmmovq %r8, (%rsi)	# ...and store it to dst
+0x137: 6288                 | 	andq %r8, %r8		# val <= 0?
+0x139: 714c01000000000000   | 	jle Loop1_2		# if so, goto Npos:
+0x142: c0f00100000000000000 | 	iaddq $1, %rax		# count++ #如果是正数count+1 
+0x14c:                      | Loop1_2:
+0x14c: c0f70800000000000000 | 	iaddq $8, %rdi		# src++
+0x156: c0f60800000000000000 | 	iaddq $8, %rsi		# dst++
+0x160: c0f2ffffffffffffffff | 	iaddq $-1, %rdx		# len-- #rdx代表还需要复制的src字符串的长度
+0x16a: 762301000000000000   | 	jg Loop1
+                            | 
+                            | ##################################################################
+                            | # Do not modify the following section of code
+                            | # Function epilogue.
+0x173:                      | Done:
+0x173: 90                   | 	ret
+                            | ##################################################################
+                            | # Keep the following label at the end of your function
+0x174:                      | End:
+                            | #/* $end ncopy-ys */
+0x174:                      | EndFun:
+                            | 
+                            | ###############################
+                            | # Source and destination blocks 
+                            | ###############################
+0x178:                      | 	.align 8
+0x178:                      | src:
+0x178: ffffffffffffffff     | 	.quad -1
+0x180: 0200000000000000     | 	.quad 2
+0x188: 0300000000000000     | 	.quad 3
+0x190: fcffffffffffffff     | 	.quad -4
+0x198: fadebc0000000000     | 	.quad 0xbcdefa # This shouldn't get moved
+                            | 
+0x1a0:                      | 	.align 16
+0x1a0:                      | Predest:
+0x1a0: fadebc0000000000     | 	.quad 0xbcdefa
+0x1a8:                      | dest:
+0x1a8: abefcd0000000000     | 	.quad 0xcdefab
+0x1b0: abefcd0000000000     | 	.quad 0xcdefab
+0x1b8: abefcd0000000000     | 	.quad 0xcdefab
+0x1c0: abefcd0000000000     | 	.quad 0xcdefab
+0x1c8:                      | Postdest:
+0x1c8: bcfade0000000000     | 	.quad 0xdefabc
+                            | 
+0x1d0:                      | .align 8
+                            | # Run time stack
+0x1d0: 0000000000000000     | 	.quad 0
+0x1d8: 0000000000000000     | 	.quad 0
+0x1e0: 0000000000000000     | 	.quad 0
+0x1e8: 0000000000000000     | 	.quad 0
+0x1f0: 0000000000000000     | 	.quad 0
+0x1f8: 0000000000000000     | 	.quad 0
+0x200: 0000000000000000     | 	.quad 0
+0x208: 0000000000000000     | 	.quad 0
+0x210: 0000000000000000     | 	.quad 0
+0x218: 0000000000000000     | 	.quad 0
+0x220: 0000000000000000     | 	.quad 0
+0x228: 0000000000000000     | 	.quad 0
+0x230: 0000000000000000     | 	.quad 0
+0x238: 0000000000000000     | 	.quad 0
+0x240: 0000000000000000     | 	.quad 0
+0x248: 0000000000000000     | 	.quad 0
+                            | 
+0x250:                      | Stack:
