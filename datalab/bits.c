@@ -165,7 +165,13 @@ int tmin(void) {
  *   Rating: 1
  */
 int isTmax(int x) {
-  return !((x^(1<<31))+1);
+  //利用Tmax + 1 = Tmin, Tmin + Tmax = -1
+  int x1 = x + 1; //x1 = Tmin = 1000...0000
+  x = x ^ x1; //x = 1111...1111
+  x = x + 1; //x = 0
+  x1 = !x1;
+  x = x + x1;
+  return !x;
 }
 /* 
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
@@ -176,7 +182,9 @@ int isTmax(int x) {
  *   Rating: 2
  */
 int allOddBits(int x) {
-  int num = 0x55555555; //num是一个0101...0101这样的数
+  int num = 0x55; 
+  num = (num << 8) + num;
+  num = (num << 16) + num;//num是一个0101...0101这样的数
   return !((x|num)+1);
 }
 /* 
@@ -201,9 +209,12 @@ int negate(int x) {
  */
 int isAsciiDigit(int x) {
   //x的形式为0000...0000 0011 (0000-1001)
-  int num1 = 0xffffffc8; //1111...1111 1100 1000
+  int numa = 0xff; 
+  int numb = (numa << 8);
+  int num = ((numb + numa) << 16) + numb; 
+  int num1 = num + 0xc8; //1111...1111 1100 1000
   int bool1 = !(((num1^x)>>3)+1);
-  int num2 = 0xffffffc6; //1111...1111 1100 0110
+  int num2 = num + 0xc6; //1111...1111 1100 0110
   int bool2 = !(((num2^x)>>1)+1);
   return bool1|bool2;
 }
@@ -226,10 +237,10 @@ int conditional(int x, int y, int z) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-  int notsamesym = (x>>31)^(y>>31); //如果符号相同，notsamesym为0000...0000,否则为1111...1111;
-  int y_x = !((y+(~x)+1)>>31); //如果y>=x，取1，否则取0 
-  int symy = !(y>>31); //如果y>=0，取1，否则取0
-  return (y_x&(~notsamesym)) + (symy&notsamesym);
+  int control = (x>>31)^(y>>31); //如果符号相同，notsamesym为0000...0000,否则为1111...1111;
+  int bool1 = !((y+(~x)+1)>>31); //如果y>=x，取1，否则取0 
+  int bool2 = !(y>>31); //如果y>=0，取1，否则取0
+  return (bool1&(~control)) + (bool2&control);
 }
 //4
 /* 
@@ -241,9 +252,7 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4 
  */
 int logicalNeg(int x) {
-  int control1 = ((x>>31)^(((~x)+1)>>31))+1;//如果x是0或min或max，control1 = 1，否则为0.
-  int control2 = (x>>31)+((x<<1)>>1)+1;//x>>31用来检查x是否是min(1000...0000)，((x<<1)>>1)用来检查x是否是max(0111...1111)
-  return control1&control2;
+  return ((x | (~x +1)) >> 31) + 1;
 }
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
@@ -258,19 +267,20 @@ int logicalNeg(int x) {
  *  Rating: 4
  */
 int howManyBits(int x) {
+  int b16,b8,b4,b2,b1,b0;
   int sign = x>>31;
-  x = ((~sign)&x)|(sign&(~x));
-  int b16 = (!!(x>>16))<<4; //如果前16位全0，则取0，否则取16.
+  x = ((~sign)&x)|(sign&(~x)); //x是正数，取x，否则取~x
+  b16 = (!!(x>>16))<<4; //如果前16位全0，则取0，否则取16.
   x = x>>b16; //如果前16位为0，则不右移；否则右移16位继续探索
-  int b8 = (!!(x>>8))<<3;
+  b8 = (!!(x>>8))<<3;
   x = x>>b8;
-  int b4 = (!!(x>>4))<<2;
+  b4 = (!!(x>>4))<<2;
   x = x>>b4;
-  int b2 = (!!(x>>2))<<1;
+  b2 = (!!(x>>2))<<1;
   x = x>>b2;
-  int b1 = !!(x>>1);
+  b1 = !!(x>>1);
   x = x>>b1;
-  int b0 = x;
+  b0 = x;
   return b16+b8+b4+b2+b1+b0+1;
 }
 //float
